@@ -3,6 +3,6 @@ package tui
 import "github.com/charmbracelet/lipgloss"
 
 func GetHomeStyle() string {
-	lipgloss.NewStyle()
+	return lipgloss.NewStyle().Render("This is the home layout")
 
 }

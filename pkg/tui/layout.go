@@ -50,7 +50,9 @@ func (m Model) View() string {
 
 	header := RenderHeader(&m)
 	menu := RenderMenu(&m)
-	layout := lipgloss.JoinVertical(lipgloss.Top, header, menu)
+	home := GetHomeStyle()
+	body := lipgloss.JoinHorizontal(lipgloss.Top, menu, home)
+	layout := lipgloss.JoinVertical(lipgloss.Top, header, body)
 	return layoutStyle.Render(layout)
 }
 
