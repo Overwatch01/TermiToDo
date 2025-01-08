@@ -5,6 +5,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var menuBody string
+
 type Model struct {
 	Width      int
 	Height     int
@@ -35,6 +37,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+		menuBody = m.getMenuBody()
 	default:
 		return m, nil
 	}
@@ -50,12 +53,21 @@ func (m Model) View() string {
 
 	header := RenderHeader(&m)
 	menu := RenderMenu(&m)
-	home := GetHomeStyle()
-	body := lipgloss.JoinHorizontal(lipgloss.Top, menu, home)
+	body := lipgloss.JoinHorizontal(lipgloss.Top, menu, menuBody)
 	layout := lipgloss.JoinVertical(lipgloss.Top, header, body)
 	return layoutStyle.Render(layout)
 }
 
 func InitialModel() Model {
 	return Model{}
+}
+
+func (m *Model) getMenuBody() string {
+	switch m.GetCurrentMenu() {
+	case "help":
+		return RenderHelp()
+
+	default:
+		return RenderHome(m)
+	}
 }

@@ -1,6 +1,10 @@
 package tui
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+)
 
 var menuStyle = lipgloss.NewStyle().
 	Border(lipgloss.RoundedBorder()).
@@ -34,4 +38,8 @@ func RenderMenu(m *Model) string {
 
 func (m *Model) GetMenuCount() int {
 	return len(menus) - 1
+}
+
+func (m *Model) GetCurrentMenu() string {
+	return strings.ToLower(menus[m.CurrentTab])
 }

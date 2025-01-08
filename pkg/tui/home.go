@@ -2,7 +2,10 @@ package tui
 
 import "github.com/charmbracelet/lipgloss"
 
-func GetHomeStyle() string {
-	return lipgloss.NewStyle().Render("This is the home layout")
+var homeLayoutStyle = lipgloss.NewStyle().
+	Border(lipgloss.RoundedBorder()).
+	Padding(1)
 
+func RenderHome(m *Model) string {
+	return homeLayoutStyle.Width(m.Width / 2).Render("This is the home layout")
 }
