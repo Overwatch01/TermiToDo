@@ -21,18 +21,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		// update the terminal dimension
-		m.Width = msg.Width - 20
-		m.Height = msg.Height
+		if msg.Width-20 > 60 {
+			m.Width = msg.Width - 20
+		}
+		m.Height = 1000
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q":
 			return m, tea.Quit
-		case "up", "k":
+		case "left", "h":
 			if m.CurrentTab > 0 {
 				m.CurrentTab--
 			}
-		case "down", "j":
-			if m.CurrentTab < m.GetMenuCount() {
+		case "right", "l":
+			if m.CurrentTab < m.GetTabCount() {
 				m.CurrentTab++
 			}
 		}
@@ -46,28 +48,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	layoutStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
+		Border(lipgloss.RoundedBorder(), false, true, true, true).
 		Width(m.Width).
-		Padding(1, 2).
 		Margin(1, 10)
 
-	header := RenderHeader(&m)
-	menu := RenderMenu(&m)
-	body := lipgloss.JoinHorizontal(lipgloss.Top, menu, menuBody)
-	layout := lipgloss.JoinVertical(lipgloss.Top, header, body)
-	return layoutStyle.Render(layout)
+	tab := RenderTab(&m)
+	// header := RenderHeader(&m)
+	// menu := RenderMenu(&m)
+	body := lipgloss.JoinVertical(lipgloss.Top, tab, menuBody)
+	// layout := lipgloss.JoinVertical(lipgloss.Top, header, body)
+	return layoutStyle.Render(body)
 }
 
 func InitialModel() Model {
 	return Model{}
 }
 
-func (m *Model) getMenuBody() string {
-	switch m.GetCurrentMenu() {
+func (m Model) getMenuBody() string {
+	switch m.GetCurrentTab() {
 	case "help":
 		return RenderHelp()
 
+	case "task":
+		return RenderTask(&m)
+
 	default:
-		return RenderHome(m)
+		return RenderHome(&m)
 	}
 }
