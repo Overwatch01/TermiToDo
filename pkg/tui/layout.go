@@ -13,10 +13,39 @@ type Model struct {
 	Height     int
 	CurrentTab int
 	TaskInput  textinput.Model
+	InputMode  bool
 }
 
-type TermiKeys interface {
-	SetKeys()
+type KeyMap interface {
+	SetKeyMap(msg string) tea.Cmd
+}
+
+func (m *Model) DefaultKeyMap(msg string) tea.Cmd {
+	var cmd tea.Cmd = nil
+	switch msg {
+	case "ctrl+c":
+		cmd = tea.Quit
+	case "q":
+		if !m.InputMode {
+			cmd = tea.Quit
+		}
+	case "esc":
+		if m.InputMode == true {
+			m.InputMode = false
+		} else {
+			cmd = tea.Quit
+		}
+	case "left":
+		if m.CurrentTab > 0 && !m.InputMode {
+			m.CurrentTab--
+		}
+	case "right":
+		if m.CurrentTab < m.GetTabCount() && !m.InputMode {
+			m.CurrentTab++
+		}
+
+	}
+	return cmd
 }
 
 func (m Model) Init() tea.Cmd {
@@ -33,26 +62,28 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.Height = 1000
 	case tea.KeyMsg:
-		if m.GetCurrentTab() == "task" {
-			cmd = m.SetKeys(msg.String())
-		}
-		switch msg.String() {
-		case "ctrl+c", "esc", "q":
-			return m, tea.Quit
-		case "left", "h":
-			if m.CurrentTab > 0 {
-				m.CurrentTab--
-			}
-		case "right", "l":
-			if m.CurrentTab < m.GetTabCount() {
-				m.CurrentTab++
-			}
-		}
+		// m.SetKeys(layoutaLayout)
+		cmd = m.GetCurrentTabKeyMap(msg.String())
+		// if m.GetCurrentTab() == "task" {
+		// 	cmd = m.SetKeys(msg.String())
+		// }
+		// switch msg.String() {
+		// case "ctrl+c", "esc", "q":
+		// 	return m, tea.Quit
+		// case "left", "h":
+		// 	if m.CurrentTab > 0 {
+		// 		m.CurrentTab--
+		// 	}
+		// case "right", "l":
+		// 	if m.CurrentTab < m.GetTabCount() {
+		// 		m.CurrentTab++
+		// 	}
+		// }
 
-		menuBody = m.getMenuBody()
 	default:
 		return m, cmd
 	}
+	menuBody = m.getMenuBody()
 	return m, cmd
 }
 
@@ -79,18 +110,19 @@ func InitialModel() Model {
 
 	return Model{
 		TaskInput: textInputModel,
+		InputMode: false,
 	}
 }
 
-func (m Model) getMenuBody() string {
-	switch m.GetCurrentTab() {
+func (m *Model) getMenuBody() string {
+	switch m.GetCurrentTab().tab {
 	case "help":
 		return RenderHelp()
 
 	case "task":
-		return RenderTask(&m)
+		return RenderTask(m)
 
 	default:
-		return RenderHome(&m)
+		return RenderHome(m)
 	}
 }
