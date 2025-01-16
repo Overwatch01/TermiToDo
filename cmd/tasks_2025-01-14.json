@@ -1,0 +1,17 @@
+[
+  {
+    "id": 0,
+    "task": "Have a restrospective session with the guys",
+    "completed": false
+  },
+  {
+    "id": 1,
+    "task": "Push and deploy update to the test env",
+    "completed": false
+  },
+  {
+    "id": 2,
+    "task": "make the UI responsive",
+    "completed": true
+  }
+]

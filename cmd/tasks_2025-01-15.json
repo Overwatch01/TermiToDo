@@ -1,0 +1,22 @@
+[
+  {
+    "id": 0,
+    "task": "Joy wants to do photoshoot",
+    "completed": false
+  },
+  {
+    "id": 1,
+    "task": "Do Toast bread",
+    "completed": true
+  },
+  {
+    "id": 2,
+    "task": "Inspect House",
+    "completed": true
+  },
+  {
+    "id": 3,
+    "task": "Download Kraven the hunter",
+    "completed": false
+  }
+]

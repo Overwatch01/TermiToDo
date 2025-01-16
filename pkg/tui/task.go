@@ -2,8 +2,11 @@ package tui
 
 import (
 	"fmt"
-	"strconv"
+	"strings"
+	"time"
 
+	"github.com/Overwatch01/TermToDo/model"
+	"github.com/Overwatch01/TermToDo/pkg/file"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -16,10 +19,14 @@ func (tm TaskModel) SetKeyMap(msg string) tea.Cmd {
 	var cmd tea.Cmd
 	switch msg {
 	case "enter":
-		if tm.m.TaskInput.Value() != "" {
-			taskItems = append(taskItems, tm.m.TaskInput.Value())
+		if tm.m.TaskInput.Value() != "" && tm.m.InputMode {
+			taskItems = NewTask(tm.m.TaskInput.Value())
 			tm.m.InputMode = false
 			userInput = ""
+		}
+
+		if !tm.m.InputMode && tm.m.TaskInput.Value() == "" {
+			showDialog = true
 		}
 	case "backspace":
 		if tm.m.TaskInput.Value() != "" {
@@ -40,10 +47,31 @@ func (tm TaskModel) SetKeyMap(msg string) tea.Cmd {
 			selectedTask++
 		}
 	default:
-		tm.m.InputMode = true
-		userInput = userInput + msg
+		if strings.HasPrefix(msg, "ctrl") {
+			if msg == "ctrl+u" {
+				taskItems
+			}
+			break
+		}
+
+		if showDialog {
+			if msg == "n" {
+				showDialog = false
+				userInput = ""
+			}
+
+			if msg == "y" {
+				setTaskAsCompleted()
+				showDialog = false
+				userInput = ""
+			}
+		} else {
+			tm.m.InputMode = true
+			userInput = userInput + msg
+		}
 	}
 	tm.m.TaskInput.SetValue(userInput)
+	tm.m.TaskInput.CursorEnd()
 	tm.m.TaskInput, cmd = tm.m.TaskInput.Update(msg)
 	return cmd
 }
@@ -55,7 +83,7 @@ var (
 
 	focusedTaskList = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#EEEEEE")).
-			BorderStyle(lipgloss.NormalBorder()).
+			BorderStyle(lipgloss.DoubleBorder()).
 			BorderForeground(highlight).
 			Padding(0, 1)
 
@@ -100,22 +128,25 @@ var (
 				Underline(true)
 
 	selectedTask = 0
+	showDialog   = false
 
 	userInput string
-	taskItems []string = []string{"Item 1", "Item 2"}
+	taskItems = []model.Task{}
 )
 
 func RenderTask(m *Model) string {
 	var taskInput lipgloss.Style
+	var taskView string
 
 	width := m.Width - 10
 	taskInfoWidth := width / 4
 	taskWidth := width - taskInfoWidth - 10
 	tasks := lipgloss.JoinVertical(lipgloss.Left, renderTaskItem(taskWidth)...)
 
-	widthInfo := fmt.Sprintf("\n Width: %v \n taskInfoWidth: %v \n taskWidth: %v \n User Input: %v \n Number of Tasks: %v \n Input Mode: %v", width, taskInfoWidth, width-taskInfoWidth, m.TaskInput.Value(), len(taskItems), m.InputMode)
+	widthInfo := fmt.Sprintf("\n Your task for %v \n Keep going 👊", time.Now().Format("2006-01-02"))
+	// widthInfo := fmt.Sprintf("\n Width: %v \n taskInfoWidth: %v \n taskWidth: %v \n User Input: %v \n Number of Tasks: %v \n Input Mode: %v", width, taskInfoWidth, width-taskInfoWidth, m.TaskInput.Value(), len(taskItems), m.InputMode)
 
-	info := taskInfo.Width(taskInfoWidth).Render("This will show the information on the task that needs to be completed " + widthInfo)
+	info := taskInfo.Width(taskInfoWidth).Render(widthInfo + getTasksInfo())
 	m.TaskInput.Width = taskWidth
 
 	if m.InputMode {
@@ -124,19 +155,19 @@ func RenderTask(m *Model) string {
 		taskInput = unfocusedTaskInput
 	}
 
-	taskView := lipgloss.JoinVertical(lipgloss.Left, taskInput.Width(taskWidth).Render(m.TaskInput.View()), list.Render(tasks))
+	if !showDialog {
+		taskView = lipgloss.JoinVertical(lipgloss.Left, taskInput.Width(taskWidth).Render(m.TaskInput.View()), list.Render(tasks))
 
-	taskUI := lipgloss.JoinHorizontal(lipgloss.Left, info, taskView)
+	} else {
+		m.TaskInput.SetValue(taskItems[selectedTask].Task)
+		taskView = lipgloss.JoinVertical(lipgloss.Left, taskInput.Width(taskWidth).Render(m.TaskInput.View()), renderDialog(taskWidth))
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Left, info, taskView)
 
-	return lipgloss.NewStyle().Render(taskUI, renderDialog(m.Width))
 }
 
 func getTask() {
-	if len(taskItems) < 0 {
-		for i := 0; i < 10; i++ {
-			taskItems = append(taskItems, "Item no "+strconv.Itoa(i))
-		}
-	}
+	taskItems, _ = file.ReadFile()
 }
 
 func renderTaskItem(width int) []string {
@@ -149,26 +180,54 @@ func renderTaskItem(width int) []string {
 		} else {
 			taskList = unfocusedTaskList
 		}
-		renderTask = append(renderTask, taskList.Width(width).Render(item))
+		renderTask = append(renderTask, taskList.Width(width).Render(item.Task))
 	}
 	return renderTask
 
 }
 
 func renderDialog(width int) string {
-	okButton := activeButtonStyle.Render("Yes")
-	cancelButton := buttonStyle.Render("Maybe")
+	okButton := activeButtonStyle.Render("(Y)es")
+	cancelButton := buttonStyle.Render("(N)o")
 
 	question := lipgloss.NewStyle().Width(50).Align(lipgloss.Center).Render("Do you want to mark task as completed?")
 	buttons := lipgloss.JoinHorizontal(lipgloss.Top, okButton, cancelButton)
 	ui := lipgloss.JoinVertical(lipgloss.Center, question, buttons)
 
-	dialog := lipgloss.Place(width, 9,
+	dialog := lipgloss.Place(width, 29,
 		lipgloss.Center, lipgloss.Center,
 		dialogBoxStyle.Render(ui),
+		lipgloss.WithWhitespaceChars("猫咪"),
 		lipgloss.WithWhitespaceForeground(subtle),
 	)
 
 	return dialog
 
+}
+
+func NewTask(task string) []model.Task {
+	taskItems = append(taskItems, model.Task{Id: len(taskItems), Task: task, Completed: false})
+	file.SaveFile(taskItems)
+	return taskItems
+}
+
+func setTaskAsCompleted() {
+	taskItems[selectedTask].Completed = true
+	file.SaveFile(taskItems)
+	return
+}
+
+func getTasksInfo() string {
+	return fmt.Sprintf("\n\n Tasks (%v) \n Uncompleted Tasks (%v) \n Completed Tasks(%v)\n ", len(taskItems), getTotalTaskByStatus(false), getTotalTaskByStatus(true))
+}
+
+func getTotalTaskByStatus(completed bool) int {
+	totalCount := 0
+
+	for _, item := range taskItems {
+		if item.Completed == completed {
+			totalCount++
+		}
+	}
+	return totalCount
 }
