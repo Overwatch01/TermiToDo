@@ -49,7 +49,7 @@ func (tm TaskModel) SetKeyMap(msg string) tea.Cmd {
 	default:
 		if strings.HasPrefix(msg, "ctrl") {
 			if msg == "ctrl+u" {
-				taskItems
+				//				taskItems
 			}
 			break
 		}
