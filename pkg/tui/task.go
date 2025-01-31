@@ -157,8 +157,7 @@ func RenderTask(m *Model) string {
 	taskWidth := width - taskInfoWidth - 10
 	tasks := lipgloss.JoinVertical(lipgloss.Left, renderTaskItem(m, taskWidth)...)
 
-	widthInfo := fmt.Sprintf("\n Your task for %v \n Keep going 👊 \n Task Mode(%v) \n", time.Now().Format("2006-01-02"), m.TaskMode)
-	// widthInfo := fmt.Sprintf("\n Width: %v \n taskInfoWidth: %v \n taskWidth: %v \n User Input: %v \n Number of Tasks: %v \n Input Mode: %v", width, taskInfoWidth, width-taskInfoWidth, m.TaskInput.Value(), len(taskItems), m.InputMode)
+	widthInfo := fmt.Sprintf("\n Your task for %v \n Keep going 👊 \n ", time.Now().Format("2006-01-02"))
 
 	info := taskInfo.Width(taskInfoWidth).Render(widthInfo + getTasksInfo())
 	m.TaskInput.Width = taskWidth
@@ -236,7 +235,7 @@ func setTaskAsCompleted() {
 
 func getTasksInfo() string {
 	totalTask, totalCompletedTask, totalUncompletedTask := getTotalTasksCount()
-	return fmt.Sprintf("\n\n All Tasks (%v) \n Uncompleted Tasks (%v) \n Completed Tasks(%v)\n ", totalTask, totalCompletedTask, totalUncompletedTask)
+	return fmt.Sprintf("\n\n All Tasks (%v) \n Completed Tasks(%v)\n Uncompleted Tasks (%v) \n  ", totalTask, totalCompletedTask, totalUncompletedTask)
 }
 
 func getTotalTasksCount() (int, int, int) {

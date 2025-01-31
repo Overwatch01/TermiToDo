@@ -63,24 +63,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.Height = 1000
 	case tea.KeyMsg:
-		// m.SetKeys(layoutaLayout)
 		cmd = m.GetCurrentTabKeyMap(msg.String())
-		// if m.GetCurrentTab() == "task" {
-		// 	cmd = m.SetKeys(msg.String())
-		// }
-		// switch msg.String() {
-		// case "ctrl+c", "esc", "q":
-		// 	return m, tea.Quit
-		// case "left", "h":
-		// 	if m.CurrentTab > 0 {
-		// 		m.CurrentTab--
-		// 	}
-		// case "right", "l":
-		// 	if m.CurrentTab < m.GetTabCount() {
-		// 		m.CurrentTab++
-		// 	}
-		// }
-
 	default:
 		return m, cmd
 	}
@@ -95,10 +78,8 @@ func (m Model) View() string {
 		Margin(1, 10)
 
 	tab := RenderTab(&m)
-	// header := RenderHeader(&m)
-	// menu := RenderMenu(&m)
-	body := lipgloss.JoinVertical(lipgloss.Top, tab, menuBody)
-	// layout := lipgloss.JoinVertical(lipgloss.Top, header, body)
+	footer := RenderFooter()
+	body := lipgloss.JoinVertical(lipgloss.Top, tab, menuBody, footer)
 	return layoutStyle.Render(body)
 }
 
@@ -124,6 +105,8 @@ func (m *Model) getMenuBody() string {
 	case "task":
 		return RenderTask(m)
 
+	case "about":
+		return RenderAbout()
 	default:
 		return RenderHome(m)
 	}
