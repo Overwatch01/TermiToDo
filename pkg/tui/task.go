@@ -11,6 +11,14 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type TaskMode int
+
+const (
+	All TaskMode = iota
+	Completed
+	Uncompleted
+)
+
 type TaskModel struct {
 	m *Model
 }
@@ -49,7 +57,13 @@ func (tm TaskModel) SetKeyMap(msg string) tea.Cmd {
 	default:
 		if strings.HasPrefix(msg, "ctrl") {
 			if msg == "ctrl+u" {
-				//				taskItems
+				tm.m.TaskMode = Uncompleted
+			}
+			if msg == "ctrl+a" {
+				tm.m.TaskMode = All
+			}
+			if msg == "ctrl+t" {
+				tm.m.TaskMode = Completed
 			}
 			break
 		}
@@ -141,9 +155,9 @@ func RenderTask(m *Model) string {
 	width := m.Width - 10
 	taskInfoWidth := width / 4
 	taskWidth := width - taskInfoWidth - 10
-	tasks := lipgloss.JoinVertical(lipgloss.Left, renderTaskItem(taskWidth)...)
+	tasks := lipgloss.JoinVertical(lipgloss.Left, renderTaskItem(m, taskWidth)...)
 
-	widthInfo := fmt.Sprintf("\n Your task for %v \n Keep going 👊", time.Now().Format("2006-01-02"))
+	widthInfo := fmt.Sprintf("\n Your task for %v \n Keep going 👊 \n Task Mode(%v) \n", time.Now().Format("2006-01-02"), m.TaskMode)
 	// widthInfo := fmt.Sprintf("\n Width: %v \n taskInfoWidth: %v \n taskWidth: %v \n User Input: %v \n Number of Tasks: %v \n Input Mode: %v", width, taskInfoWidth, width-taskInfoWidth, m.TaskInput.Value(), len(taskItems), m.InputMode)
 
 	info := taskInfo.Width(taskInfoWidth).Render(widthInfo + getTasksInfo())
@@ -166,12 +180,15 @@ func RenderTask(m *Model) string {
 
 }
 
-func getTask() {
+func getTask(m *Model) {
 	taskItems, _ = file.ReadFile()
+	if m.TaskMode != All {
+		taskItems = getTaskByMode(m.TaskMode)
+	}
 }
 
-func renderTaskItem(width int) []string {
-	getTask()
+func renderTaskItem(m *Model, width int) []string {
+	getTask(m)
 	var taskList lipgloss.Style
 	renderTask := []string{}
 	for i, item := range taskItems {
@@ -206,7 +223,7 @@ func renderDialog(width int) string {
 }
 
 func NewTask(task string) []model.Task {
-	taskItems = append(taskItems, model.Task{Id: len(taskItems), Task: task, Completed: false})
+	taskItems = append([]model.Task{{Id: len(taskItems), Task: task, Completed: false}}, taskItems...)
 	file.SaveFile(taskItems)
 	return taskItems
 }
@@ -218,16 +235,44 @@ func setTaskAsCompleted() {
 }
 
 func getTasksInfo() string {
-	return fmt.Sprintf("\n\n Tasks (%v) \n Uncompleted Tasks (%v) \n Completed Tasks(%v)\n ", len(taskItems), getTotalTaskByStatus(false), getTotalTaskByStatus(true))
+	totalTask, totalCompletedTask, totalUncompletedTask := getTotalTasksCount()
+	return fmt.Sprintf("\n\n All Tasks (%v) \n Uncompleted Tasks (%v) \n Completed Tasks(%v)\n ", totalTask, totalCompletedTask, totalUncompletedTask)
 }
 
-func getTotalTaskByStatus(completed bool) int {
-	totalCount := 0
+func getTotalTasksCount() (int, int, int) {
+	totalTasks := 0
+	totalCompletedTask := 0
+	totalUncompletedTask := 0
+
+	tasks, _ := file.ReadFile()
+	totalTasks = len(tasks)
+
+	for _, item := range tasks {
+		if item.Completed == true {
+			totalCompletedTask++
+		} else {
+			totalUncompletedTask++
+		}
+	}
+	return totalTasks, totalCompletedTask, totalUncompletedTask
+}
+
+func getTaskByMode(mode TaskMode) []model.Task {
+	var tasks = []model.Task{}
+	var completed bool
+	if mode == Completed {
+		completed = true
+	} else if mode == Uncompleted {
+		completed = false
+	} else {
+		return tasks
+	}
 
 	for _, item := range taskItems {
 		if item.Completed == completed {
-			totalCount++
+			tasks = append(tasks, item)
 		}
+
 	}
-	return totalCount
+	return tasks
 }

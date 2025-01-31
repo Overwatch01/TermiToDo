@@ -14,6 +14,7 @@ type Model struct {
 	CurrentTab int
 	TaskInput  textinput.Model
 	InputMode  bool
+	TaskMode   TaskMode
 }
 
 type KeyMap interface {
@@ -111,6 +112,7 @@ func InitialModel() Model {
 	return Model{
 		TaskInput: textInputModel,
 		InputMode: false,
+		TaskMode:  All,
 	}
 }
 
